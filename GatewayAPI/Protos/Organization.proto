@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "GatewayAPI.Protos";
+
+service Organization {
+    rpc GetOrganization (OrganizationRequest) returns (OrganizationReply);
+}
+
+message OrganizationRequest {
+    string OrganizationName = 1;
+    bool IsActive=2;
+}
+
+message OrganizationReply {
+    int32 Id=1;
+    string OrganizationName = 2;
+    bool IsActive=3;
+}
