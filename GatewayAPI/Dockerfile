@@ -9,6 +9,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["GatewayAPI/GatewayAPI.csproj", "GatewayAPI/"]
+COPY ["CommonDLL/Shared.dll", "Shared.dll"]
 RUN dotnet restore "./GatewayAPI/./GatewayAPI.csproj"
 COPY . .
 WORKDIR "/src/GatewayAPI"
