@@ -1,40 +1,38 @@
-using GatewayAPI.Protos;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-//builder.Services.AddGrpcClient<Organization.OrganizationClient>(o =>
-//{
-//    o.Address = new Uri("http://localhost:5249");
-//});
-builder.Services.AddGrpcClient<Organization.OrganizationClient>(o =>
+builder.WebHost.ConfigureKestrel(options =>
 {
-    o.Address = new Uri("http://localhost:5001");
-}).ConfigureChannel(o =>
-{
-    o.HttpHandler = new SocketsHttpHandler
+    options.ListenAnyIP(4500, listenOptions =>
     {
-        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-        EnableMultipleHttp2Connections = true
-    };
+        listenOptions.Protocols = HttpProtocols.Http1;
+    });
 });
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add Ocelot configuration
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Add Ocelot services
+builder.Services.AddOcelot(builder.Configuration);
+// Register CORS policy
+builder.Services.AddCors(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.AddPolicy("CORSPolicy", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+var app = builder.Build();
+app.UseRouting();
 
-app.UseAuthorization();
-
-app.MapControllers();
+// Apply CORS policy between UseRouting and UseEndpoints
+app.UseCors("CORSPolicy");
+// Use Ocelot middleware
+app.UseOcelot().Wait();
 
 app.Run();
+
